@@ -1,0 +1,19 @@
+[requires]
+boost/1.74.0
+openssl/1.1.1h
+nlohmann_json/3.9.1
+
+[generators]
+cmake_paths
+#cmake
+
+[options]
+boost:shared=False
+openssl:shared=False
+
+#[imports]
+#bin, *.dll -> ./bin
+#lib, *.dylib* -> ./lib
+#lib, *.a -> ./lib
+#include, *.h -> ./include
+#include, *.hpp -> ./include
