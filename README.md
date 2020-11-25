@@ -3,6 +3,7 @@
 This is an easy to use Rest Server based on [Boost](https://www.boost.org/), 
 [Nlohmann JSON](https://github.com/nlohmann/json) and [OpenSSL](https://www.openssl.org/).  
 
+
 ## Compiling on Windows 10
 For compiling on Windows 10 you have to install [Visual Studio 2019](https://visualstudio.microsoft.com) and [CMake](https://cmake.org/).  
 You also have to install [Boost](https://www.boost.org/) 1.73.0 or later, [Nlohmann JSON](https://github.com/nlohmann/json) and [OpenSSL](https://www.openssl.org/).  
@@ -20,6 +21,7 @@ cmake -G "Visual Studio 16 2019" -A x64 -S . -B "build"
 cmake --build build --config Release
 cmake --install build --config Release
 ```
+
 
 ## Compiling on macOS
 For compiling on macOS you have to install [Xcode](https://developer.apple.com/xcode/) and [CMake](https://cmake.org/).  
@@ -61,6 +63,6 @@ cmake --install build --config Release
 ## License
 Rest Server C++ is licenced under the [The MIT License (MIT)](LICENSE).  
 [Boost](https://www.boost.org/) is licensed under the [Boost Software License](https://www.boost.org/users/license.html).  
-[Nlohmann JSON](https://github.com/nlohmann/json)is licenced under the [The MIT License (MIT)](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT).  
+[Nlohmann JSON](https://github.com/nlohmann/json) is licenced under the [The MIT License (MIT)](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT).  
 [OpenSSL](https://www.openssl.org/) is licensed under the [OpenSSL License](https://www.openssl.org/source/license-openssl-ssleay.txt).  
 
