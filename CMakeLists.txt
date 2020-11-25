@@ -75,14 +75,18 @@ endif()
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost 1.73.0 COMPONENTS filesystem log program_options random system REQUIRED)
+if (WIN32)
+    # disable autolinking in boost
+    add_definitions( -DBOOST_ALL_NO_LIB )
+endif()
+find_package(Boost 1.73.0 REQUIRED COMPONENTS filesystem log program_options random system)
 
 # OpenSSL - https://www.openssl.org/
 if (DEFINED CONAN_OPENSSL_ROOT)
     set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
 endif()
 set(OPENSSL_USE_STATIC_LIBS TRUE)
-find_package(OpenSSL COMPONENTS Crypto SSL REQUIRED)
+find_package(OpenSSL REQUIRED COMPONENTS Crypto SSL)
 set(SSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR})
 set(SSL_LIBRARIES ${OPENSSL_LIBRARIES})
 
