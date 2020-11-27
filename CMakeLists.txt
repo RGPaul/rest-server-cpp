@@ -81,15 +81,6 @@ if (WIN32)
 endif()
 find_package(Boost 1.73.0 REQUIRED COMPONENTS filesystem log program_options random system)
 
-# OpenSSL - https://www.openssl.org/
-if (DEFINED CONAN_OPENSSL_ROOT)
-    set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
-endif()
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-find_package(OpenSSL REQUIRED COMPONENTS Crypto SSL)
-set(SSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR})
-set(SSL_LIBRARIES ${OPENSSL_LIBRARIES})
-
 # nlohmann json - https://github.com/nlohmann/json
 if (DEFINED CONAN_NLOHMANN_JSON_ROOT)
     set(NLOHMANN_JSON_ROOT ${CONAN_NLOHMANN_JSON_ROOT})
@@ -109,19 +100,15 @@ add_executable(restserver
 target_include_directories(restserver PRIVATE 
                             ${Boost_INCLUDE_DIRS}
                             ${NLOHMANN_JSON_INCLUDE_DIR}
-                            ${SSL_INCLUDE_DIR}
                             )
 
 target_link_libraries(restserver
                         ${Boost_LIBRARIES}
-                        ${SSL_LIBRARIES}
                         )
 
 # add posix thread library for Linux, BSD, Solaris, Minix, ...
 if (UNIX AND NOT APPLE)
     target_link_libraries(restserver dl pthread)
-elseif(WIN32)
-    target_link_libraries(restserver crypt32)
 endif()
 
 ### PCH ###
