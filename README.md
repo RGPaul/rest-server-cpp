@@ -3,7 +3,7 @@
 This is an easy to use Rest Server based on [Boost](https://www.boost.org/) and
 [Nlohmann JSON](https://github.com/nlohmann/json).  
 
-
+It is designed to exchange JSON data.  
 
 ## Compiling on Windows 10
 For compiling on Windows 10 you have to install [Visual Studio 2019](https://visualstudio.microsoft.com) and [CMake](https://cmake.org/).  
