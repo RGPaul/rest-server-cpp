@@ -100,6 +100,8 @@ find_package(NlohmannJson REQUIRED)
 
 add_executable(restserver
                 src/main.cpp
+                src/RestServer.cpp
+                src/Session.cpp
                 )
 
 ### link libraries ###

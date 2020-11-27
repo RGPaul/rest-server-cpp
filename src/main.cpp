@@ -30,13 +30,15 @@
 #include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 
+#include "RestServer.hpp"
+
 const std::string kAppVersion = "1.0";
 
 // hostname that should be used
 std::string serverHost {"0.0.0.0"};
 
 // port that should be used
-std::string serverPort {"8080"};
+unsigned short serverPort {8080};
 
 // this will hold all possible program options that can be specified
 std::unique_ptr<boost::program_options::options_description> optionsDescription;
@@ -46,6 +48,8 @@ void processArgs(int argc, const char** argv);
 
 int main(int argc, const char** argv)
 {
+    using namespace rgpaul;
+
     // output some info if the program was started
     std::cout << "Rest Server v" << kAppVersion << std::endl
               << "Copyright (c) 2020 Ralph-Gordon Paul. All rights reserved." << std::endl
@@ -61,6 +65,10 @@ int main(int argc, const char** argv)
     processArgs(argc, argv);
 
     BOOST_LOG_TRIVIAL(info) << "using hostname: " << serverHost << " and port: " << serverPort;
+
+    auto restServer = std::make_shared<RestServer>(serverHost);
+
+    restServer->startListening();
 
     return EXIT_SUCCESS;
 }
@@ -96,6 +104,6 @@ void processArgs(int argc, const char** argv)
     // if the port parameter was specified, we store that information in the port variable
     if (map.count("port"))
     {
-        serverPort = map["port"].as<std::string>();
+        serverPort = map["port"].as<unsigned short>();
     }
 }
