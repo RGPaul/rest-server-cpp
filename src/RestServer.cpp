@@ -76,9 +76,17 @@ RestServer::RestServer(const std::string& host, unsigned short port)
 // Public
 // ---------------------------------------------------------------------------------------------------------------------
 
+void RestServer::registerEndpoint(
+    const std::string& target,
+    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
+        callback)
+{
+    _callbacks.emplace(target, callback);
+}
+
 void RestServer::startListening()
 {
-     if (!_acceptor.is_open())
+    if (!_acceptor.is_open())
     {
         BOOST_LOG_TRIVIAL(error) << "Error start listening. Acceptor is not open.";
         return;
@@ -91,62 +99,6 @@ void RestServer::startListening()
 // ---------------------------------------------------------------------------------------------------------------------
 // Private
 // ---------------------------------------------------------------------------------------------------------------------
-
-boost::beast::string_view RestServer::mimeType(boost::beast::string_view path)
-{
-    using boost::beast::iequals;
-    auto const ext = [&path] {
-        auto const pos = path.rfind(".");
-        if (pos == boost::beast::string_view::npos)
-            return boost::beast::string_view {};
-        return path.substr(pos);
-    }();
-
-    if (iequals(ext, ".htm"))
-        return "text/html";
-    if (iequals(ext, ".html"))
-        return "text/html";
-    if (iequals(ext, ".php"))
-        return "text/html";
-    if (iequals(ext, ".css"))
-        return "text/css";
-    if (iequals(ext, ".txt"))
-        return "text/plain";
-    if (iequals(ext, ".js"))
-        return "application/javascript";
-    if (iequals(ext, ".json"))
-        return "application/json";
-    if (iequals(ext, ".xml"))
-        return "application/xml";
-    if (iequals(ext, ".swf"))
-        return "application/x-shockwave-flash";
-    if (iequals(ext, ".flv"))
-        return "video/x-flv";
-    if (iequals(ext, ".png"))
-        return "image/png";
-    if (iequals(ext, ".jpe"))
-        return "image/jpeg";
-    if (iequals(ext, ".jpeg"))
-        return "image/jpeg";
-    if (iequals(ext, ".jpg"))
-        return "image/jpeg";
-    if (iequals(ext, ".gif"))
-        return "image/gif";
-    if (iequals(ext, ".bmp"))
-        return "image/bmp";
-    if (iequals(ext, ".ico"))
-        return "image/vnd.microsoft.icon";
-    if (iequals(ext, ".tiff"))
-        return "image/tiff";
-    if (iequals(ext, ".tif"))
-        return "image/tiff";
-    if (iequals(ext, ".svg"))
-        return "image/svg+xml";
-    if (iequals(ext, ".svgz"))
-        return "image/svg+xml";
-
-    return "application/text";
-}
 
 void RestServer::doAccept()
 {
@@ -165,9 +117,39 @@ void RestServer::onAccept(boost::beast::error_code ec, boost::asio::ip::tcp::soc
     {
         // create the session and run it
         BOOST_LOG_TRIVIAL(info) << "server accepted incoming connection.";
-        std::make_shared<Session>(std::move(socket))->run();
+        std::make_shared<Session>(std::move(socket), shared_from_this())->run();
     }
 
     // accept another connection
     doAccept();
+}
+
+void RestServer::handleRequest(const boost::beast::http::request<boost::beast::http::string_body>& request,
+                               std::shared_ptr<Session> session)
+{
+    if (!session)
+    {
+        BOOST_LOG_TRIVIAL(error) << "RestServer handle request got empty session.";
+        return;
+    }
+
+    // request path must be absolute and not contain "..".
+    if (request.target().empty() || request.target()[0] != '/'
+        || request.target().find("..") != boost::beast::string_view::npos)
+    {
+        session->sendBadRequest("Illegal request-target");
+        return;
+    }
+
+    auto search = _callbacks.find(std::string(request.target()));
+    if (search != _callbacks.end())
+    {
+        // found callback function for given target
+        auto callback = search->second;
+        callback(session, request);
+    }
+    else
+    {
+        session->sendNotFound(request.target());
+    }
 }

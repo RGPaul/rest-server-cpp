@@ -21,16 +21,18 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
-#include <boost/asio/bind_executor.hpp>
-#include <boost/asio/buffer.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/config.hpp>
+#include <nlohmann/json.hpp>
+
+#include "Session.hpp"
 
 namespace rgpaul
 {
@@ -39,6 +41,10 @@ class RestServer : public std::enable_shared_from_this<RestServer>
   public:
     RestServer() = delete;
     explicit RestServer(const std::string& host, unsigned short port = 8080);
+
+    void registerEndpoint(const std::string& target,
+                          std::function<void(std::shared_ptr<Session>,
+                                             const boost::beast::http::request<boost::beast::http::string_body>&)>);
 
     void startListening();
 
@@ -49,11 +55,16 @@ class RestServer : public std::enable_shared_from_this<RestServer>
     boost::asio::ip::tcp::endpoint _endpoint;
     boost::asio::ip::tcp::acceptor _acceptor {_ioc};
 
-    // std::shared_ptr<Session> _session;
-
-    static boost::beast::string_view mimeType(boost::beast::string_view path);
+    std::unordered_map<std::string,
+                       std::function<void(std::shared_ptr<Session>,
+                                          const boost::beast::http::request<boost::beast::http::string_body>&)>>
+        _callbacks;
 
     void doAccept();
     void onAccept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
+
+    friend Session;
+    void handleRequest(const boost::beast::http::request<boost::beast::http::string_body>& req,
+                       std::shared_ptr<Session> session);
 };
 }  // namespace rgpaul

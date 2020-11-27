@@ -24,6 +24,10 @@
 #include <chrono>
 
 #include <boost/log/trivial.hpp>
+#include <boost/asio/dispatch.hpp>
+#include <boost/beast/version.hpp>
+
+#include "RestServer.hpp"
 
 using namespace rgpaul;
 
@@ -31,7 +35,10 @@ using namespace rgpaul;
 // Constructors / Destructor
 // ---------------------------------------------------------------------------------------------------------------------
 
-Session::Session(boost::asio::ip::tcp::socket&& socket) : _stream(std::move(socket)) {}
+Session::Session(boost::asio::ip::tcp::socket&& socket, std::shared_ptr<RestServer> server)
+    : _stream(std::move(socket)), _restServer(server)
+{
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Public
@@ -43,9 +50,162 @@ void Session::run()
                           boost::beast::bind_front_handler(&Session::doRead, shared_from_this()));
 }
 
+void Session::sendResponse(const nlohmann::json& data)
+{
+    boost::beast::http::response<boost::beast::http::string_body> response {boost::beast::http::status::ok,
+                                                                            _req.version()};
+
+    response.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+    response.set(boost::beast::http::field::content_type, "application/json");
+    response.keep_alive(_req.keep_alive());
+    response.body() = data.dump();
+    response.prepare_payload();
+
+    send(std::move(response));
+}
+
+void Session::sendBadRequest(boost::beast::string_view why)
+{
+    nlohmann::json message = {{"error", std::string(why)}};
+    boost::beast::http::response<boost::beast::http::string_body> response {boost::beast::http::status::bad_request,
+                                                                            _req.version()};
+    response.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+    response.set(boost::beast::http::field::content_type, "application/json");
+    response.keep_alive(_req.keep_alive());
+    response.body() = message.dump();
+    response.prepare_payload();
+
+    send(std::move(response));
+}
+
+void Session::sendNotFound(boost::beast::string_view target)
+{
+    nlohmann::json message = {{"error", "The resource '" + std::string(target) + "' was not found."}};
+    boost::beast::http::response<boost::beast::http::string_body> response {boost::beast::http::status::not_found,
+                                                                            _req.version()};
+    response.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+    response.set(boost::beast::http::field::content_type, "application/json");
+    response.keep_alive(_req.keep_alive());
+    response.body() = message.dump();
+    response.prepare_payload();
+
+    send(std::move(response));
+}
+
+void Session::sendServerError(boost::beast::string_view what)
+{
+    nlohmann::json message = {{"error", "An error occurred: '" + std::string(what) + "'"}};
+    boost::beast::http::response<boost::beast::http::string_body> response {
+        boost::beast::http::status::internal_server_error, _req.version()};
+    response.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+    response.set(boost::beast::http::field::content_type, "application/json");
+    response.keep_alive(_req.keep_alive());
+    response.body() = message.dump();
+    response.prepare_payload();
+
+    send(std::move(response));
+}
+
+void Session::sendFile(const std::string& path)
+{
+    // attempt to open the file
+    boost::beast::error_code ec;
+    boost::beast::http::file_body::value_type body;
+    body.open(path.c_str(), boost::beast::file_mode::scan, ec);
+
+    // Handle the case where the file doesn't exist
+    if (ec == boost::beast::errc::no_such_file_or_directory)
+        return sendNotFound(_req.target());
+
+    // handle an unknown error
+    if (ec)
+        return sendServerError(ec.message());
+
+    // Cache the size since we need it after the move
+    auto const size = body.size();
+
+    // respond to HEAD request
+    if (_req.method() == boost::beast::http::verb::head)
+    {
+        boost::beast::http::response<boost::beast::http::empty_body> response {boost::beast::http::status::ok,
+                                                                               _req.version()};
+        response.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+        response.set(boost::beast::http::field::content_type, mimeType(path));
+        response.content_length(size);
+        response.keep_alive(_req.keep_alive());
+        return send(std::move(response));
+    }
+
+    // respond to GET request
+    boost::beast::http::response<boost::beast::http::file_body> response {
+        std::piecewise_construct, std::make_tuple(std::move(body)),
+        std::make_tuple(boost::beast::http::status::ok, _req.version())};
+    response.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
+    response.set(boost::beast::http::field::content_type, mimeType(path));
+    response.content_length(size);
+    response.keep_alive(_req.keep_alive());
+    return send(std::move(response));
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Private
 // ---------------------------------------------------------------------------------------------------------------------
+
+boost::beast::string_view Session::mimeType(boost::beast::string_view path)
+{
+    using boost::beast::iequals;
+    auto const ext = [&path] {
+        auto const pos = path.rfind(".");
+        if (pos == boost::beast::string_view::npos)
+            return boost::beast::string_view {};
+        return path.substr(pos);
+    }();
+
+    if (iequals(ext, ".htm"))
+        return "text/html";
+    if (iequals(ext, ".html"))
+        return "text/html";
+    if (iequals(ext, ".php"))
+        return "text/html";
+    if (iequals(ext, ".css"))
+        return "text/css";
+    if (iequals(ext, ".txt"))
+        return "text/plain";
+    if (iequals(ext, ".js"))
+        return "application/javascript";
+    if (iequals(ext, ".json"))
+        return "application/json";
+    if (iequals(ext, ".xml"))
+        return "application/xml";
+    if (iequals(ext, ".swf"))
+        return "application/x-shockwave-flash";
+    if (iequals(ext, ".flv"))
+        return "video/x-flv";
+    if (iequals(ext, ".png"))
+        return "image/png";
+    if (iequals(ext, ".jpe"))
+        return "image/jpeg";
+    if (iequals(ext, ".jpeg"))
+        return "image/jpeg";
+    if (iequals(ext, ".jpg"))
+        return "image/jpeg";
+    if (iequals(ext, ".gif"))
+        return "image/gif";
+    if (iequals(ext, ".bmp"))
+        return "image/bmp";
+    if (iequals(ext, ".ico"))
+        return "image/vnd.microsoft.icon";
+    if (iequals(ext, ".tiff"))
+        return "image/tiff";
+    if (iequals(ext, ".tif"))
+        return "image/tiff";
+    if (iequals(ext, ".svg"))
+        return "image/svg+xml";
+    if (iequals(ext, ".svgz"))
+        return "image/svg+xml";
+
+    return "application/text";
+}
 
 void Session::doRead()
 {
@@ -115,74 +275,23 @@ void Session::onWrite(bool close, boost::beast::error_code ec, std::size_t bytes
     doRead();
 }
 
+template <bool isRequest, class Body, class Fields>
+void Session::send(boost::beast::http::message<isRequest, Body, Fields>&& response)
+{
+    auto res = std::make_shared<boost::beast::http::message<isRequest, Body, Fields>>(std::move(response));
+    _res = res;
+
+    // write the response
+    boost::beast::http::async_write(
+        _stream, *res, boost::beast::bind_front_handler(&Session::onWrite, shared_from_this(), res->need_eof()));
+}
+
 void Session::handleRequest()
 {
-    // Returns a bad request response
-    auto const bad_request = [this](boost::beast::string_view why) {
-        boost::beast::http::response<boost::beast::http::string_body> res {boost::beast::http::status::bad_request,
-                                                                           _req.version()};
-        res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(boost::beast::http::field::content_type, "text/html");
-        res.keep_alive(_req.keep_alive());
-        res.body() = std::string(why);
-        res.prepare_payload();
-        return res;
-    };
+    std::shared_ptr<RestServer> restServer = _restServer.lock();
 
-    // Returns a not found response
-    auto const not_found = [this](boost::beast::string_view target) {
-        boost::beast::http::response<boost::beast::http::string_body> res {boost::beast::http::status::not_found,
-                                                                           _req.version()};
-        res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(boost::beast::http::field::content_type, "text/html");
-        res.keep_alive(_req.keep_alive());
-        res.body() = "The resource '" + std::string(target) + "' was not found.";
-        res.prepare_payload();
-        return res;
-    };
-
-    // Returns a server error response
-    auto const server_error = [this](boost::beast::string_view what) {
-        boost::beast::http::response<boost::beast::http::string_body> res {
-            boost::beast::http::status::internal_server_error, _req.version()};
-        res.set(boost::beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(boost::beast::http::field::content_type, "text/html");
-        res.keep_alive(_req.keep_alive());
-        res.body() = "An error occurred: '" + std::string(what) + "'";
-        res.prepare_payload();
-        return res;
-    };
-
-    // Make sure we can handle the method
-    if (_req.method() != boost::beast::http::verb::get && _req.method() != boost::beast::http::verb::head)
-        return send(bad_request("Unknown HTTP-method"));
-
-    // Request path must be absolute and not contain "..".
-    if (_req.target().empty() || _req.target()[0] != '/' || _req.target().find("..") != boost::beast::string_view::npos)
-        return send(bad_request("Illegal request-target"));
-
-    return send(not_found("blubb"));
-}
-
-void Session::send(boost::beast::http::response<boost::beast::http::empty_body> res)
-{
-    // auto sp = std::make_shared<boost::beast::http::message<false, Body, Fields>>(std::move(msg));
-
-    auto r = std::make_shared<boost::beast::http::response<boost::beast::http::empty_body>>(std::move(res));
-
-    // // write the response
-    boost::beast::http::async_write(
-        _stream, *r, boost::beast::bind_front_handler(&Session::onWrite, shared_from_this(), r->need_eof()));
-}
-
-void Session::send(boost::beast::http::response<boost::beast::http::file_body> res) {}
-
-void Session::send(boost::beast::http::response<boost::beast::http::string_body> res)
-{
-    auto r = std::make_shared<boost::beast::http::response<boost::beast::http::string_body>>(std::move(res));
-    _res = r;
-
-    // // write the response
-    boost::beast::http::async_write(
-        _stream, *r, boost::beast::bind_front_handler(&Session::onWrite, shared_from_this(), r->need_eof()));
+    if (restServer)
+    {
+        restServer->handleRequest(_req, shared_from_this());
+    }
 }

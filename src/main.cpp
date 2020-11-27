@@ -68,6 +68,16 @@ int main(int argc, const char** argv)
 
     auto restServer = std::make_shared<RestServer>(serverHost);
 
+    restServer->registerEndpoint("/", [](std::shared_ptr<Session> session,
+                                         const boost::beast::http::request<boost::beast::http::string_body>& request) {
+        BOOST_LOG_TRIVIAL(info) << "in callback for /";
+
+        nlohmann::json message;
+        message["message"] = "It worked";
+
+        session->sendResponse(message);
+    });
+
     restServer->startListening();
 
     return EXIT_SUCCESS;
