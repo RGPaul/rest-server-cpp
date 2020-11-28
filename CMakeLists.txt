@@ -16,7 +16,7 @@ include (CMakeToolsHelpers OPTIONAL)
 set (CMAKE_FIND_FRAMEWORK LAST)
 
 # add local cmake modules to module path
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 # conan dependencies (try conan_paths first and then conanbuildinfo)
 if (EXISTS ${CMAKE_BINARY_DIR}/conan_paths.cmake)
@@ -163,5 +163,11 @@ install (TARGETS RestServer EXPORT RestServerTargets
 install (EXPORT RestServerTargets
     FILE RestServerTargets.cmake
     NAMESPACE RestServer::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/RestServer
+)
+
+install ( FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/RestServerConfig.cmake"
+    "${CMAKE_BINARY_DIR}/RestServerConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/RestServer
 )
