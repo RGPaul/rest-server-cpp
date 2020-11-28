@@ -6,7 +6,7 @@
 #
 
 cmake_minimum_required (VERSION 3.18)
-project (RestServer)
+project (RestServer VERSION 1.0.0 LANGUAGES CXX)
 set (CMAKE_CXX_STANDARD 17)
 
 # For Visual Studio Code
@@ -94,7 +94,7 @@ target_include_directories (RestServer
 # set version info
 set_target_properties (RestServer PROPERTIES
     SOVERSION 1
-    VERSION 1.0.0
+    VERSION ${PROJECT_VERSION}
     PUBLIC_HEADER "${restserver_public_headers}"
 )
 
