@@ -32,7 +32,7 @@
 #include <boost/beast/http.hpp>
 #include <nlohmann/json.hpp>
 
-#include "Session.hpp"
+#include <rgpaul/Session.hpp>
 
 namespace rgpaul
 {

@@ -66,7 +66,9 @@ if (WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-### link external libraries ###
+# ----------------------------------------------------------------------------------------------------------------------
+# external libraries
+# ----------------------------------------------------------------------------------------------------------------------
 
 # Boost - https://www.boost.org
 if (DEFINED CONAN_BOOST_ROOT)
@@ -87,36 +89,81 @@ if (DEFINED CONAN_NLOHMANN_JSON_ROOT)
 endif()
 find_package(NlohmannJson REQUIRED)
 
-### create executable ###
 
-add_executable(restserver
-                src/main.cpp
-                src/RestServer.cpp
-                src/Session.cpp
-                )
+# ----------------------------------------------------------------------------------------------------------------------
+# create library
+# ----------------------------------------------------------------------------------------------------------------------
+
+add_library(restserver STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/RestServer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Session.cpp
+)
+
+# link dependencies
+target_link_libraries(restserver
+    ${Boost_LIBRARIES}
+)
+
+# add inlcude folders of dependencies
+target_include_directories(restserver
+    PRIVATE ${Boost_INCLUDE_DIRS}
+    PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/include
+)
+
+# set version info
+set_target_properties(restserver PROPERTIES
+    VERSION 1.0.0
+    SOVERSION 0
+)
+
+if (WIN32)
+    target_precompile_headers(restserver PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/Pch.hpp")
+endif()
+
+# ----------------------------------------------------------------------------------------------------------------------
+# create executable (sample)
+# ----------------------------------------------------------------------------------------------------------------------
+
+add_executable(sample
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/RestServer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Session.cpp
+)
 
 ### link libraries ###
 
-target_include_directories(restserver PRIVATE 
-                            ${Boost_INCLUDE_DIRS}
-                            ${NLOHMANN_JSON_INCLUDE_DIR}
-                            )
+target_include_directories(sample PRIVATE 
+    PRIVATE ${Boost_INCLUDE_DIRS}
+    PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include
+)
 
-target_link_libraries(restserver
-                        ${Boost_LIBRARIES}
-                        )
+target_link_libraries(sample
+    ${Boost_LIBRARIES}
+    restserver
+)
 
 # add posix thread library for Linux, BSD, Solaris, Minix, ...
 if (UNIX AND NOT APPLE)
-    target_link_libraries(restserver dl pthread)
+    target_link_libraries(sample dl pthread)
 endif()
 
 ### PCH ###
 
 if (WIN32)
-    target_precompile_headers(restserver PUBLIC "${CMAKE_SOURCE_DIR}/src/windows/Pch.hpp")
+    target_precompile_headers(sample PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/Pch.hpp")
 endif()
 
-# installation 
+# ----------------------------------------------------------------------------------------------------------------------
+# Installation
+# ----------------------------------------------------------------------------------------------------------------------
+
 install(TARGETS restserver
-    RUNTIME DESTINATION bin)
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    PUBLIC_HEADER DESTINATION include
+    RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/include/rgpaul DESTINATION include)

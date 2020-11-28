@@ -19,7 +19,7 @@
  -----------------------------------------------------------------------------------------------------------------------
 */
 
-#include "Session.hpp"
+#include <rgpaul/Session.hpp>
 
 #include <chrono>
 
@@ -27,7 +27,7 @@
 #include <boost/asio/dispatch.hpp>
 #include <boost/beast/version.hpp>
 
-#include "RestServer.hpp"
+#include <rgpaul/RestServer.hpp>
 
 using namespace rgpaul;
 

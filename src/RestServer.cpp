@@ -19,14 +19,14 @@
  -----------------------------------------------------------------------------------------------------------------------
 */
 
-#include "RestServer.hpp"
+#include <rgpaul/RestServer.hpp>
 
 #include <fstream>
 
 #include <boost/asio/strand.hpp>
 #include <boost/log/trivial.hpp>
 
-#include "Session.hpp"
+#include <rgpaul/Session.hpp>
 
 using namespace rgpaul;
 

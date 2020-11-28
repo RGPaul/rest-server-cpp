@@ -30,7 +30,7 @@
 #include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 
-#include "RestServer.hpp"
+#include <rgpaul/RestServer.hpp>
 
 const std::string kAppVersion = "1.0";
 
