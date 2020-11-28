@@ -71,13 +71,13 @@ set (restserver_public_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/include/rgpaul/Session.hpp
 )
 
-add_library (restserver STATIC
+add_library (RestServer STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/RestServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Session.cpp
 )
 
 # link dependencies
-target_link_libraries (restserver
+target_link_libraries (RestServer
     Boost::filesystem
     Boost::log
     Boost::random
@@ -85,14 +85,14 @@ target_link_libraries (restserver
 )
 
 # add inlcude folders of dependencies
-target_include_directories (restserver
+target_include_directories (RestServer
     PRIVATE ${Boost_INCLUDE_DIRS}
     PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # set version info
-set_target_properties (restserver PROPERTIES
+set_target_properties (RestServer PROPERTIES
     SOVERSION 1
     VERSION 1.0.0
     PUBLIC_HEADER "${restserver_public_headers}"
@@ -101,7 +101,7 @@ set_target_properties (restserver PROPERTIES
 ### PCH ###
 
 if (WIN32)
-    target_precompile_headers(restserver PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/Pch.hpp")
+    target_precompile_headers(RestServer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/Pch.hpp")
 endif()
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ target_include_directories(sample PRIVATE
 
 target_link_libraries(sample
     Boost::program_options
-    restserver
+    RestServer
 )
 
 # add posix thread library for Linux, BSD, Solaris, Minix, ...
@@ -149,7 +149,7 @@ write_basic_package_version_file(
 )
 
 include (GNUInstallDirs)
-install (TARGETS restserver
+install (TARGETS RestServer EXPORT RestServerTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         COMPONENT RestServer_Runtime
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -158,4 +158,10 @@ install (TARGETS restserver
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         COMPONENT RestServer_Development
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rgpaul
+)
+
+install (EXPORT RestServerTargets
+    FILE RestServerTargets.cmake
+    NAMESPACE RestServer::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/RestServer
 )
