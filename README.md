@@ -5,6 +5,21 @@ This is an easy to use Rest Server based on [Boost](https://www.boost.org/) and
 
 It is designed to exchange JSON data.  
 
+## Usage
+
+```cpp
+auto restServer = std::make_shared<RestServer>("127.0.0.1", 8080);
+
+restServer->registerEndpoint("/", [](auto session, const auto& request) {
+    nlohmann::json message;
+    message["message"] = "Test Response";
+
+    session->sendResponse(message);
+});
+
+restServer->startListening();
+```
+
 ## Compiling on Windows 10
 For compiling on Windows 10 you have to install [Visual Studio 2019](https://visualstudio.microsoft.com) and [CMake](https://cmake.org/).  
 You also have to install [Boost](https://www.boost.org/) 1.74.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
