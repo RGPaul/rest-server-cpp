@@ -32,8 +32,6 @@
 
 #include <rgpaul/RestServer.hpp>
 
-const std::string kAppVersion = "1.0";
-
 // hostname that should be used
 std::string serverHost {"0.0.0.0"};
 
@@ -51,7 +49,7 @@ int main(int argc, const char** argv)
     using namespace rgpaul;
 
     // output some info if the program was started
-    std::cout << "Rest Server v" << kAppVersion << std::endl
+    std::cout << "Rest Server v" << APP_VERSION << std::endl
               << "Copyright (c) 2020 Ralph-Gordon Paul. All rights reserved." << std::endl
               << std::endl;
 
