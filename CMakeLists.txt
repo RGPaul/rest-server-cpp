@@ -86,6 +86,7 @@ set (restserver_public_headers
 add_library (RestServer STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/RestServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/UriNode.cpp
 )
 
 # link dependencies

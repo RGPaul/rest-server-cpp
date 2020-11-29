@@ -23,10 +23,12 @@
 
 #include <fstream>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/log/trivial.hpp>
 
 #include <rgpaul/Session.hpp>
+#include <rgpaul/UriNode.hpp>
 
 using namespace rgpaul;
 
@@ -81,7 +83,12 @@ void RestServer::registerEndpoint(
     std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
         callback)
 {
-    _callbacks.emplace(target, callback);
+    std::shared_ptr<UriNode> node = std::make_shared<UriNode>();
+
+    node->id = target;
+    node->callback = std::move(callback);
+
+    // _callbacks.emplace(target, callback);
 }
 
 void RestServer::startListening(unsigned short threads)
@@ -103,6 +110,24 @@ void RestServer::startListening(unsigned short threads)
 // ---------------------------------------------------------------------------------------------------------------------
 // Private
 // ---------------------------------------------------------------------------------------------------------------------
+
+std::vector<std::string> RestServer::splitUri(std::string uri)
+{
+    std::vector<std::string> container;
+
+    // cut get params
+    std::size_t pos = uri.find('?');
+    if (pos != std::string::npos)
+        uri = uri.substr(0, pos);
+
+    boost::split(container, uri, boost::is_any_of("/"));
+
+    // we replace the empty first entry with "/"
+    if (container.size() > 0 && container.front().empty())
+        container[0] = "/";
+
+    return container;
+}
 
 void RestServer::doAccept()
 {
@@ -145,6 +170,7 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
         return;
     }
 
+    /*
     auto search = _callbacks.find(std::string(request.target()));
     if (search != _callbacks.end())
     {
@@ -156,4 +182,5 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
     {
         session->sendNotFound(request.target());
     }
+    */
 }
