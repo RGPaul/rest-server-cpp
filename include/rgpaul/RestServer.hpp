@@ -65,7 +65,7 @@ class RestServer : public std::enable_shared_from_this<RestServer>
     std::vector<std::thread> _threads;
 
     std::shared_ptr<UriNode> _registeredEndpoints;
-    
+
     void doAccept();
     void onAccept(boost::beast::error_code ec, boost::asio::ip::tcp::socket socket);
 

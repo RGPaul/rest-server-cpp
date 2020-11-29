@@ -72,6 +72,10 @@ RestServer::RestServer(const std::string& host, unsigned short port)
         BOOST_LOG_TRIVIAL(error) << "listen: " << ec.message();
         return;
     }
+
+    // init root node for uri
+    _registeredEndpoints = std::make_shared<UriNode>();
+    _registeredEndpoints->id = "/";
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -83,12 +87,12 @@ void RestServer::registerEndpoint(
     std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
         callback)
 {
-    std::shared_ptr<UriNode> node = std::make_shared<UriNode>();
+    std::vector<std::string> uriPaths = splitUri(target);
 
-    node->id = target;
-    node->callback = std::move(callback);
+    std::shared_ptr<UriNode> node = _registeredEndpoints->createNodeForPath(uriPaths);
 
-    // _callbacks.emplace(target, callback);
+    if (node)
+        node->callback = std::move(callback);
 }
 
 void RestServer::startListening(unsigned short threads)
@@ -107,10 +111,6 @@ void RestServer::startListening(unsigned short threads)
     for (auto i = 0; i < threads; ++i) _threads.emplace_back([this] { _ioc.run(); });
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Private
-// ---------------------------------------------------------------------------------------------------------------------
-
 std::vector<std::string> RestServer::splitUri(std::string uri)
 {
     std::vector<std::string> container;
@@ -128,6 +128,10 @@ std::vector<std::string> RestServer::splitUri(std::string uri)
 
     return container;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Private
+// ---------------------------------------------------------------------------------------------------------------------
 
 void RestServer::doAccept()
 {
@@ -170,17 +174,19 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
         return;
     }
 
-    /*
-    auto search = _callbacks.find(std::string(request.target()));
-    if (search != _callbacks.end())
-    {
-        // found callback function for given target
-        auto callback = search->second;
-        callback(session, request);
-    }
-    else
+    std::vector<std::string> uriPaths = splitUri(std::string(request.target()));
+
+    std::shared_ptr<UriNode> node = _registeredEndpoints->findNodeForPath(uriPaths);
+
+    if (!node)
     {
         session->sendNotFound(request.target());
+        return;
     }
-    */
+
+    auto& callback = node->callback;
+    if (callback)
+    {
+        callback(session, request);
+    }
 }

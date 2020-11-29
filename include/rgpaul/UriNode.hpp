@@ -40,5 +40,11 @@ struct UriNode
 
     std::weak_ptr<UriNode> parent;
     std::unordered_map<std::string, std::shared_ptr<UriNode>> children;
+
+    //! creates a new entry in the tree - must be called on the root node
+    std::shared_ptr<UriNode> createNodeForPath(const std::vector<std::string>& uri);
+
+    //! finds the node for the given uri path - must be called on the root node
+    std::shared_ptr<UriNode> findNodeForPath(const std::vector<std::string>& uri);
 };
 }  // namespace rgpaul

@@ -21,3 +21,18 @@
 
 #include <rgpaul/UriNode.hpp>
 
+using namespace rgpaul;
+
+std::shared_ptr<UriNode> UriNode::createNodeForPath(const std::vector<std::string>& uri)
+{
+    std::shared_ptr<UriNode> node;
+
+    return node;
+}
+
+std::shared_ptr<UriNode> UriNode::findNodeForPath(const std::vector<std::string>& uri)
+{
+    std::shared_ptr<UriNode> node;
+
+    return node;
+}
