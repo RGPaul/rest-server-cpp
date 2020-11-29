@@ -11,14 +11,15 @@ It is designed to exchange JSON data.
 auto restServer = std::make_shared<RestServer>("127.0.0.1", 8080);
 
 restServer->registerEndpoint("/", [](auto session, const auto& request) {
-    nlohmann::json message;
-    message["message"] = "Test Response";
+    nlohmann::json data;
+    data["message"] = "Test Response";
 
-    session->sendResponse(message);
+    session->sendResponse(data);
 });
 
 restServer->startListening();
 ```
+
 
 ## Compiling on Windows 10
 For compiling on Windows 10 you have to install [Visual Studio 2019](https://visualstudio.microsoft.com) and [CMake](https://cmake.org/).  
