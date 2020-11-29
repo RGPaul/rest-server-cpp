@@ -19,10 +19,12 @@
  -----------------------------------------------------------------------------------------------------------------------
 */
 
+#include <chrono>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 #include <boost/log/core/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -33,7 +35,7 @@
 #include <rgpaul/RestServer.hpp>
 
 // hostname that should be used
-std::string serverHost {"0.0.0.0"};
+std::string serverHost {"127.0.0.1"};
 
 // port that should be used
 unsigned short serverPort {8080};
@@ -47,6 +49,7 @@ void processArgs(int argc, const char** argv);
 int main(int argc, const char** argv)
 {
     using namespace rgpaul;
+    namespace http = boost::beast::http;
 
     // output some info if the program was started
     std::cout << "Rest Server v" << APP_VERSION << std::endl
@@ -66,17 +69,20 @@ int main(int argc, const char** argv)
 
     auto restServer = std::make_shared<RestServer>(serverHost);
 
-    restServer->registerEndpoint("/", [](std::shared_ptr<Session> session,
-                                         const boost::beast::http::request<boost::beast::http::string_body>& request) {
-        BOOST_LOG_TRIVIAL(info) << "in callback for /";
+    restServer->registerEndpoint("/",
+                                 [](std::shared_ptr<Session> session, const http::request<http::string_body>& request) {
+                                     BOOST_LOG_TRIVIAL(info) << "in callback for /";
 
-        nlohmann::json message;
-        message["message"] = "It worked";
+                                     nlohmann::json data;
+                                     data["message"] = "It worked";
 
-        session->sendResponse(message);
-    });
+                                     session->sendResponse(data);
+                                 });
 
-    restServer->startListening();
+    restServer->startListening(10);
+
+    // don't terminate
+    while (true) std::this_thread::sleep_for(std::chrono::minutes(1));
 
     return EXIT_SUCCESS;
 }

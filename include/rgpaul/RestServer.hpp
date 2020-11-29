@@ -24,6 +24,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -46,7 +47,8 @@ class RestServer : public std::enable_shared_from_this<RestServer>
                           std::function<void(std::shared_ptr<Session>,
                                              const boost::beast::http::request<boost::beast::http::string_body>&)>);
 
-    void startListening();
+    //! starts listening with given number of threads - this call won't block
+    void startListening(unsigned short threads = 1);
 
   private:
     // the io_context is required for all i/o
@@ -54,6 +56,9 @@ class RestServer : public std::enable_shared_from_this<RestServer>
 
     boost::asio::ip::tcp::endpoint _endpoint;
     boost::asio::ip::tcp::acceptor _acceptor {_ioc};
+
+    // holds all threads that are listening for incoming connections
+    std::vector<std::thread> _threads;
 
     std::unordered_map<std::string,
                        std::function<void(std::shared_ptr<Session>,

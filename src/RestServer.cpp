@@ -84,7 +84,7 @@ void RestServer::registerEndpoint(
     _callbacks.emplace(target, callback);
 }
 
-void RestServer::startListening()
+void RestServer::startListening(unsigned short threads)
 {
     if (!_acceptor.is_open())
     {
@@ -93,7 +93,11 @@ void RestServer::startListening()
     }
     doAccept();
 
-    _ioc.run();
+    // reserve space for the number of threads
+    _threads.reserve(threads);
+
+    // start the amount of given threads and run ioc for each of them
+    for (auto i = 0; i < threads; ++i) _threads.emplace_back([this] { _ioc.run(); });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
