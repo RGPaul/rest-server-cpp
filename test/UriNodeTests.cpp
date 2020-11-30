@@ -84,31 +84,44 @@ BOOST_AUTO_TEST_CASE(find)
     std::vector<std::string> path4 {"/", "test1", "test3"};
     std::vector<std::string> path5 {"/"};
 
+    std::vector<std::string> path6 {"/", "test2"};
+
+    // check if we can create path 1
     std::shared_ptr<UriNode> node1 = rootNode->createNodeForPath(path1);
     BOOST_REQUIRE(node1);
     BOOST_CHECK_EQUAL(node1->id(), "test1");
 
+    // check if we can find a node for path 1, and check if it is the previously created one
     std::shared_ptr<UriNode> node2 = rootNode->findNodeForPath(path1);
     BOOST_REQUIRE(node2);
     BOOST_CHECK_EQUAL(node1, node2);
 
+    // check if we can create path3
     std::shared_ptr<UriNode> node3 = rootNode->createNodeForPath(path3);
     BOOST_REQUIRE(node3);
     BOOST_CHECK_EQUAL(node3->id(), "test3");
 
+    // check if we can find a node from path3 (using path2)
     node2.reset();
     node2 = rootNode->findNodeForPath(path2);
     BOOST_REQUIRE(node2);
     BOOST_CHECK_EQUAL(node2->id(), "test2");
 
+    // check if we can create a path with a node that has a same id like a node in path3, but it is a different node
+    // because it has another path hierarchy
     std::shared_ptr<UriNode> node4 = rootNode->createNodeForPath(path4);
     BOOST_REQUIRE(node4);
     BOOST_CHECK_EQUAL(node4->id(), "test3");
     BOOST_CHECK_NE(node3, node4);
 
+    // check if we can find the root node, and check that we get the root node as result
     std::shared_ptr<UriNode> node5 = rootNode->findNodeForPath(path5);
     BOOST_REQUIRE(node5);
     BOOST_CHECK_EQUAL(node5, rootNode);
+
+    // check that we don't find test2 if we pass a wrong path
+    std::shared_ptr<UriNode> node6 = rootNode->findNodeForPath(path6);
+    BOOST_CHECK(!node6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
