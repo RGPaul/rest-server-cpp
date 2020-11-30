@@ -79,6 +79,16 @@ int main(int argc, const char** argv)
                                      session->sendResponse(data);
                                  });
 
+    restServer->registerEndpoint("/test/$/detail",
+                                 [](std::shared_ptr<Session> session, const http::request<http::string_body>& request) {
+                                     BOOST_LOG_TRIVIAL(info) << "in callback for /test/$/detail";
+
+                                     nlohmann::json data;
+                                     data["message"] = "It worked for id";
+
+                                     session->sendResponse(data);
+                                 });
+
     restServer->startListening(10);
 
     // don't terminate

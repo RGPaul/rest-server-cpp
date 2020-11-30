@@ -83,8 +83,11 @@ BOOST_AUTO_TEST_CASE(find)
     std::vector<std::string> path3 {"/", "test1", "test2", "test3"};
     std::vector<std::string> path4 {"/", "test1", "test3"};
     std::vector<std::string> path5 {"/"};
-
+    
     std::vector<std::string> path6 {"/", "test2"};
+
+    std::vector<std::string> path7 {"/", "$", "t1"};
+    std::vector<std::string> path8 {"/", "123", "t1"};
 
     // check if we can create path 1
     std::shared_ptr<UriNode> node1 = rootNode->createNodeForPath(path1);
@@ -122,6 +125,14 @@ BOOST_AUTO_TEST_CASE(find)
     // check that we don't find test2 if we pass a wrong path
     std::shared_ptr<UriNode> node6 = rootNode->findNodeForPath(path6);
     BOOST_CHECK(!node6);
+
+    // check if we can register and find a path node with a placeholder "$"
+    std::shared_ptr<UriNode> node7 = rootNode->createNodeForPath(path7);
+    BOOST_REQUIRE(node7);
+    BOOST_CHECK_EQUAL(node7->id(), "t1");
+    std::shared_ptr<UriNode> node8 = rootNode->findNodeForPath(path8);
+    BOOST_REQUIRE(node8);
+    BOOST_CHECK_EQUAL(node7, node8);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

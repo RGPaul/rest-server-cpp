@@ -81,10 +81,7 @@ RestServer::RestServer(const std::string& host, unsigned short port)
 // Public
 // ---------------------------------------------------------------------------------------------------------------------
 
-void RestServer::registerEndpoint(
-    const std::string& target,
-    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
-        callback)
+void RestServer::registerEndpoint(const std::string& target, RestServerCallback callback)
 {
     // check if it is the root element - we can assign the callback directly
     if (target == "/")
@@ -135,7 +132,13 @@ std::vector<std::string> RestServer::splitUri(std::string uri)
 
     // we replace the empty first entry with "/"
     if (container.size() > 0 && container.front().empty())
+    {
         container[0] = "/";
+
+        // remove trailing empty entry
+        if (container.back().empty())
+            container.pop_back();
+    }
 
     return container;
 }
@@ -177,16 +180,17 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
         return;
     }
 
+    std::string target = std::string(request.target());
+
     // request path must be absolute and not contain "..".
-    if (request.target().empty() || request.target()[0] != '/'
-        || request.target().find("..") != boost::beast::string_view::npos)
+    if (target.empty() || target[0] != '/' || target.find("..") != boost::beast::string_view::npos)
     {
         session->sendBadRequest("Illegal request-target");
         return;
     }
 
     // split the target
-    std::vector<std::string> uriPaths = splitUri(std::string(request.target()));
+    std::vector<std::string> uriPaths = splitUri(target);
 
     // find the node for the given target
     std::shared_ptr<UriNode> node = _registeredEndpoints->findNodeForPath(uriPaths);
@@ -194,7 +198,7 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
     // if there is no node or no callback for the node, we send a not found
     if (!node || !node->callback())
     {
-        session->sendNotFound(request.target());
+        session->sendNotFound(target);
         return;
     }
 

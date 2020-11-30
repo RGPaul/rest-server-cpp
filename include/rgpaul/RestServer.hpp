@@ -37,6 +37,9 @@
 
 namespace rgpaul
 {
+using RestServerCallback =
+    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>;
+
 class UriNode;
 
 class RestServer : public std::enable_shared_from_this<RestServer>
@@ -45,9 +48,7 @@ class RestServer : public std::enable_shared_from_this<RestServer>
     RestServer() = delete;
     explicit RestServer(const std::string& host, unsigned short port = 8080);
 
-    void registerEndpoint(const std::string& target,
-                          std::function<void(std::shared_ptr<Session>,
-                                             const boost::beast::http::request<boost::beast::http::string_body>&)>);
+    void registerEndpoint(const std::string& target, RestServerCallback callback);
 
     //! starts listening with given number of threads - this call won't block
     void startListening(unsigned short threads = 1);

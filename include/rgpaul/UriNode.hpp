@@ -26,9 +26,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <boost/beast/http.hpp>
-
-#include <rgpaul/Session.hpp>
+#include <rgpaul/RestServer.hpp>
 
 namespace rgpaul
 {
@@ -40,11 +38,8 @@ class UriNode : public std::enable_shared_from_this<UriNode>
 
     std::string id() const;
 
-    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
-    callback() const;
-    void setCallback(std::function<void(std::shared_ptr<Session>,
-                                        const boost::beast::http::request<boost::beast::http::string_body>&)>
-                         callback);
+    RestServerCallback callback() const;
+    void setCallback(RestServerCallback callback);
 
     //! creates a root node - a node with "/" as id
     static std::shared_ptr<UriNode> createRootNode();
@@ -57,8 +52,7 @@ class UriNode : public std::enable_shared_from_this<UriNode>
 
   private:
     std::string _id;
-    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
-        _callback;
+    RestServerCallback _callback;
 
     std::weak_ptr<UriNode> _parent;
     std::unordered_map<std::string, std::shared_ptr<UriNode>> _children;

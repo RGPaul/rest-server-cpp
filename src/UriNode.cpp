@@ -99,15 +99,13 @@ std::shared_ptr<UriNode> UriNode::createNodeForPath(const std::vector<std::strin
 
 std::shared_ptr<UriNode> UriNode::findNodeForPath(const std::vector<std::string>& uri)
 {
-    std::shared_ptr<UriNode> node;
-
     // uri has to have entries
     if (uri.size() <= 0)
-        return node;
+        return nullptr;
 
     // first entry must match the root node
     if (uri.front() != _id)
-        return node;
+        return nullptr;
 
     // if it is only the first entry, we return ourself
     if (uri.size() == 1)
@@ -115,7 +113,14 @@ std::shared_ptr<UriNode> UriNode::findNodeForPath(const std::vector<std::string>
 
     std::shared_ptr<UriNode> currentNode = findChildNodeWithId(uri.at(1));
     if (!currentNode)
-        return node;
+    {
+        // not found => check if there is a placeholder "$" that can be used instead
+        currentNode = findChildNodeWithId("$");
+
+        // still not found => return nullptr
+        if (!currentNode)
+            return nullptr;
+    }
 
     // check if we have to search some more
     if (uri.size() >= 2)
@@ -127,15 +132,23 @@ std::shared_ptr<UriNode> UriNode::findNodeForPath(const std::vector<std::string>
             if (child)
                 currentNode = child;
             else
-                return node;  // not found => no node for the path or part of the path
+            {
+                // not found => check if there is a placeholder "$" that can be used instead
+                child = currentNode->findChildNodeWithId("$");
+                if (child)
+                    currentNode = child;
+                else  // if there is no placeholder - the target uri is not there
+                    return nullptr;
+            }
         }
     }
 
-    // if the currentNode contains the id of the last uri - we sucessfully found the node for the given path
-    if (currentNode->id() == uri.back())
-        node = currentNode;
+    // if the currentNode contains the id of the last uri (or the placeholder "$"),
+    // then we sucessfully found the node for the given path
+    if (currentNode->id() == uri.back() || currentNode->id() == "$")
+        return currentNode;
 
-    return node;
+    return nullptr;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
