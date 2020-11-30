@@ -203,6 +203,6 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
     }
 
     // call the callback for the found node
-    auto& callback = node->callback();
+    const auto& callback = node->callback();
     callback(session, request);
 }
