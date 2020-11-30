@@ -81,8 +81,9 @@ cmake --install build --config Release
 ```
 cmake -S . -B build
 cmake --build build --config Release
-cmake --build build --config Release --target test
+cmake --build build --config Release --target test -- ARGS="--output-on-failure"
 ```
+
 
 ## License
 Rest Server C++ is licenced under the [The MIT License (MIT)](LICENSE).  
