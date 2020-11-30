@@ -24,15 +24,40 @@
 using namespace rgpaul;
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Constructors / Destructor
+// ---------------------------------------------------------------------------------------------------------------------
+
+UriNode::UriNode(const std::string& id) : _id(id) {}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Accessors
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::string UriNode::id() const
+{
+    return _id;
+}
+
+std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
+UriNode::callback() const
+{
+    return _callback;
+}
+
+void UriNode::setCallback(
+    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
+        callback)
+{
+    _callback = std::move(callback);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Public
 // ---------------------------------------------------------------------------------------------------------------------
 
 std::shared_ptr<UriNode> UriNode::createRootNode()
 {
-    std::shared_ptr<UriNode> node = std::make_shared<UriNode>();
-    node->id = "/";
-
-    return node;
+    return std::make_shared<UriNode>("/");
 }
 
 std::shared_ptr<UriNode> UriNode::createNodeForPath(const std::vector<std::string>& uri)
@@ -44,7 +69,7 @@ std::shared_ptr<UriNode> UriNode::createNodeForPath(const std::vector<std::strin
         return node;
 
     // first entry must match the root node
-    if (uri.size() > 0 && uri.front() != this->id)
+    if (uri.front() != _id)
         return node;
 
     std::shared_ptr<UriNode> currentNode = findChildNodeWithId(uri.at(1));
@@ -66,7 +91,7 @@ std::shared_ptr<UriNode> UriNode::createNodeForPath(const std::vector<std::strin
     }
 
     // if the currentNode contains the id of the last uri - we created sucessfully the new node for the given path
-    if (currentNode->id == uri.back())
+    if (currentNode->id() == uri.back())
         node = currentNode;
 
     return node;
@@ -75,6 +100,40 @@ std::shared_ptr<UriNode> UriNode::createNodeForPath(const std::vector<std::strin
 std::shared_ptr<UriNode> UriNode::findNodeForPath(const std::vector<std::string>& uri)
 {
     std::shared_ptr<UriNode> node;
+
+    // uri has to have entries
+    if (uri.size() <= 0)
+        return node;
+
+    // first entry must match the root node
+    if (uri.front() != _id)
+        return node;
+
+    // if it is only the first entry, we return ourself
+    if (uri.size() == 1)
+        return shared_from_this();
+
+    std::shared_ptr<UriNode> currentNode = findChildNodeWithId(uri.at(1));
+    if (!currentNode)
+        return node;
+
+    // check if we have to search some more
+    if (uri.size() >= 2)
+    {
+        // iterate over all path entries and search for the nodes
+        for (auto it = uri.begin() + 2; it != uri.end(); it++)
+        {
+            std::shared_ptr<UriNode> child = currentNode->findChildNodeWithId(*it);
+            if (child)
+                currentNode = child;
+            else
+                return node;  // not found => no node for the path or part of the path
+        }
+    }
+
+    // if the currentNode contains the id of the last uri - we sucessfully found the node for the given path
+    if (currentNode->id() == uri.back())
+        node = currentNode;
 
     return node;
 }
@@ -87,8 +146,8 @@ std::shared_ptr<UriNode> UriNode::findChildNodeWithId(const std::string& childId
 {
     std::shared_ptr<UriNode> node;
 
-    auto search = children.find(childId);
-    if (search != children.end())
+    auto search = _children.find(childId);
+    if (search != _children.end())
         node = search->second;
 
     return node;
@@ -96,10 +155,9 @@ std::shared_ptr<UriNode> UriNode::findChildNodeWithId(const std::string& childId
 
 std::shared_ptr<UriNode> UriNode::createChildNodeWithId(const std::string& nodeId)
 {
-    std::shared_ptr<UriNode> node = std::make_shared<UriNode>();
-    node->id = nodeId;
+    std::shared_ptr<UriNode> node = std::make_shared<UriNode>(nodeId);
 
-    children.insert({nodeId, node});
+    _children.insert({nodeId, node});
 
     return node;
 }

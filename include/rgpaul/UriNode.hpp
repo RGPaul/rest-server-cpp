@@ -32,14 +32,19 @@
 
 namespace rgpaul
 {
-struct UriNode
+class UriNode : public std::enable_shared_from_this<UriNode>
 {
-    std::string id;
-    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
-        callback;
+  public:
+    UriNode() = delete;
+    UriNode(const std::string& id);
 
-    std::weak_ptr<UriNode> parent;
-    std::unordered_map<std::string, std::shared_ptr<UriNode>> children;
+    std::string id() const;
+
+    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
+    callback() const;
+    void setCallback(std::function<void(std::shared_ptr<Session>,
+                                        const boost::beast::http::request<boost::beast::http::string_body>&)>
+                         callback);
 
     //! creates a root node - a node with "/" as id
     static std::shared_ptr<UriNode> createRootNode();
@@ -51,6 +56,13 @@ struct UriNode
     std::shared_ptr<UriNode> findNodeForPath(const std::vector<std::string>& uri);
 
   private:
+    std::string _id;
+    std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
+        _callback;
+
+    std::weak_ptr<UriNode> _parent;
+    std::unordered_map<std::string, std::shared_ptr<UriNode>> _children;
+
     //! searches for a child with the given id (won't search the childs of a child)
     std::shared_ptr<UriNode> findChildNodeWithId(const std::string& childId) const;
 

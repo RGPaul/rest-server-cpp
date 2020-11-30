@@ -89,7 +89,7 @@ void RestServer::registerEndpoint(
     // check if it is the root element - we can assign the callback directly
     if (target == "/")
     {
-        _registeredEndpoints->callback = std::move(callback);
+        _registeredEndpoints->setCallback(std::move(callback));
         return;
     }
 
@@ -101,7 +101,7 @@ void RestServer::registerEndpoint(
 
     // if the node could be created, we assign the callback to it
     if (node)
-        node->callback = std::move(callback);
+        node->setCallback(std::move(callback));
 }
 
 void RestServer::startListening(unsigned short threads)
@@ -192,13 +192,13 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
     std::shared_ptr<UriNode> node = _registeredEndpoints->findNodeForPath(uriPaths);
 
     // if there is no node or no callback for the node, we send a not found
-    if (!node || !node->callback)
+    if (!node || !node->callback())
     {
         session->sendNotFound(request.target());
         return;
     }
 
     // call the callback for the found node
-    auto& callback = node->callback;
+    auto& callback = node->callback();
     callback(session, request);
 }

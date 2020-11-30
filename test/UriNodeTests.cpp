@@ -37,12 +37,12 @@ BOOST_AUTO_TEST_SUITE(RGPUriNode)
 
 BOOST_AUTO_TEST_CASE(constructor)
 {
-    BOOST_CHECK_NO_THROW(rgpaul::UriNode {});
+    BOOST_CHECK_NO_THROW(rgpaul::UriNode("test"));
 
     std::shared_ptr<UriNode> rootNode = UriNode::createRootNode();
 
     BOOST_REQUIRE(rootNode);
-    BOOST_REQUIRE_EQUAL(rootNode->id, "/");
+    BOOST_REQUIRE_EQUAL(rootNode->id(), "/");
 }
 
 BOOST_AUTO_TEST_CASE(create)
@@ -67,35 +67,48 @@ BOOST_AUTO_TEST_CASE(create)
 
     node = rootNode->createNodeForPath(path4);
     BOOST_REQUIRE(node);
-    BOOST_CHECK_EQUAL(node->id, "test1");
+    BOOST_CHECK_EQUAL(node->id(), "test1");
 
     node = rootNode->createNodeForPath(path5);
     BOOST_REQUIRE(node);
-    BOOST_CHECK_EQUAL(node->id, "test3");
+    BOOST_CHECK_EQUAL(node->id(), "test3");
 }
 
 BOOST_AUTO_TEST_CASE(find)
 {
     std::shared_ptr<UriNode> rootNode = UriNode::createRootNode();
-    std::shared_ptr<UriNode> node1;
-    std::shared_ptr<UriNode> node2;
 
     std::vector<std::string> path1 {"/", "test1"};
-    std::vector<std::string> path2 {"/", "test1", "test2", "test3"};
+    std::vector<std::string> path2 {"/", "test1", "test2"};
+    std::vector<std::string> path3 {"/", "test1", "test2", "test3"};
+    std::vector<std::string> path4 {"/", "test1", "test3"};
+    std::vector<std::string> path5 {"/"};
 
-    node1 = rootNode->createNodeForPath(path1);
+    std::shared_ptr<UriNode> node1 = rootNode->createNodeForPath(path1);
     BOOST_REQUIRE(node1);
-    BOOST_CHECK_EQUAL(node1->id, "test1");
+    BOOST_CHECK_EQUAL(node1->id(), "test1");
 
-    node2 = rootNode->findNodeForPath(path1);
+    std::shared_ptr<UriNode> node2 = rootNode->findNodeForPath(path1);
     BOOST_REQUIRE(node2);
     BOOST_CHECK_EQUAL(node1, node2);
 
+    std::shared_ptr<UriNode> node3 = rootNode->createNodeForPath(path3);
+    BOOST_REQUIRE(node3);
+    BOOST_CHECK_EQUAL(node3->id(), "test3");
+
     node2.reset();
-    
-    node2 = rootNode->createNodeForPath(path2);
+    node2 = rootNode->findNodeForPath(path2);
     BOOST_REQUIRE(node2);
-    BOOST_CHECK_EQUAL(node2->id, "test3");
+    BOOST_CHECK_EQUAL(node2->id(), "test2");
+
+    std::shared_ptr<UriNode> node4 = rootNode->createNodeForPath(path4);
+    BOOST_REQUIRE(node4);
+    BOOST_CHECK_EQUAL(node4->id(), "test3");
+    BOOST_CHECK_NE(node3, node4);
+
+    std::shared_ptr<UriNode> node5 = rootNode->findNodeForPath(path5);
+    BOOST_REQUIRE(node5);
+    BOOST_CHECK_EQUAL(node5, rootNode);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

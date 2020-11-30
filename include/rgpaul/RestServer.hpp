@@ -37,7 +37,7 @@
 
 namespace rgpaul
 {
-struct UriNode;
+class UriNode;
 
 class RestServer : public std::enable_shared_from_this<RestServer>
 {
