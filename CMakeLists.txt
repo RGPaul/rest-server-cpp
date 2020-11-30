@@ -27,6 +27,9 @@ include (CMakeToolsHelpers OPTIONAL)
 # we prefer libraries over frameworks
 set (CMAKE_FIND_FRAMEWORK LAST)
 
+# set options
+option (BUILD_TESTS "enable building tests - requires boost test framework" ON)
+
 # add local cmake modules to module path
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
@@ -83,11 +86,13 @@ set (restserver_public_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/include/rgpaul/Session.hpp
 )
 
-add_library (RestServer STATIC
+set (restserver_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/RestServer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/UriNode.cpp
 )
+
+add_library (RestServer STATIC ${restserver_sources})
 
 # link dependencies
 target_link_libraries (RestServer
@@ -186,3 +191,60 @@ install ( FILES
     "${CMAKE_BINARY_DIR}/RestServerConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/RestServer
 )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Unit Tests
+# ----------------------------------------------------------------------------------------------------------------------
+
+if (BUILD_TESTS)
+
+    # Boost Unit Tests
+    find_package(Boost 1.74.0 REQUIRED COMPONENTS unit_test_framework)
+
+    # only enable unit tests if the unit test framework was found
+    if (Boost_UNIT_TEST_FRAMEWORK_FOUND)
+
+        # enable cmake testing
+        enable_testing()
+
+        # all tests are in the test folder
+        set (TEST_SRC 
+            ${CMAKE_CURRENT_SOURCE_DIR}/test/UriNodeTests.cpp
+        )
+
+        # copy test data
+        # file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/index.html DESTINATION .)
+
+        # process every test file
+        foreach(testSrc ${TEST_SRC})
+
+            # get the filename without the extension
+            get_filename_component(testname ${testSrc} NAME_WE)
+
+            # add test as executable
+            add_executable(${testname} ${testSrc})
+
+            # link boost and restserver
+            target_link_libraries(${testname}
+                Boost::unit_test_framework
+                RestServer
+            )
+
+            target_include_directories(${testname}
+                PRIVATE ${Boost_INCLUDE_DIRS}
+                PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
+                PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+            )
+
+            # save the executable in the tests folder
+            set_target_properties(${testname} PROPERTIES RUNTIME_OUTPUT_DIRECTORY tests)
+
+            if (WIN32)
+                target_precompile_headers(${testname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/Pch.hpp")
+            endif()
+
+            # add to cmake tests
+            add_test(NAME ${testname} COMMAND tests/${testname})
+        endforeach(testSrc)
+    endif()
+endif(BUILD_TESTS)
