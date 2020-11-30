@@ -74,8 +74,7 @@ RestServer::RestServer(const std::string& host, unsigned short port)
     }
 
     // init root node for uri
-    _registeredEndpoints = std::make_shared<UriNode>();
-    _registeredEndpoints->id = "/";
+    _registeredEndpoints = UriNode::createRootNode();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -87,10 +86,20 @@ void RestServer::registerEndpoint(
     std::function<void(std::shared_ptr<Session>, const boost::beast::http::request<boost::beast::http::string_body>&)>
         callback)
 {
+    // check if it is the root element - we can assign the callback directly
+    if (target == "/")
+    {
+        _registeredEndpoints->callback = std::move(callback);
+        return;
+    }
+
+    // split the uri path
     std::vector<std::string> uriPaths = splitUri(target);
 
+    // create a node for the path
     std::shared_ptr<UriNode> node = _registeredEndpoints->createNodeForPath(uriPaths);
 
+    // if the node could be created, we assign the callback to it
     if (node)
         node->callback = std::move(callback);
 }
@@ -102,6 +111,8 @@ void RestServer::startListening(unsigned short threads)
         BOOST_LOG_TRIVIAL(error) << "Error start listening. Acceptor is not open.";
         return;
     }
+
+    // accept incoming connections
     doAccept();
 
     // reserve space for the number of threads
@@ -174,19 +185,20 @@ void RestServer::handleRequest(const boost::beast::http::request<boost::beast::h
         return;
     }
 
+    // split the target
     std::vector<std::string> uriPaths = splitUri(std::string(request.target()));
 
+    // find the node for the given target
     std::shared_ptr<UriNode> node = _registeredEndpoints->findNodeForPath(uriPaths);
 
-    if (!node)
+    // if there is no node or no callback for the node, we send a not found
+    if (!node || !node->callback)
     {
         session->sendNotFound(request.target());
         return;
     }
 
+    // call the callback for the found node
     auto& callback = node->callback;
-    if (callback)
-    {
-        callback(session, request);
-    }
+    callback(session, request);
 }
