@@ -73,8 +73,7 @@ int main(int argc, const char** argv)
                                  [](std::shared_ptr<Session> session, const http::request<http::string_body>& request) {
                                      BOOST_LOG_TRIVIAL(info) << "in callback for /";
 
-                                     nlohmann::json data;
-                                     data["message"] = "It worked";
+                                     nlohmann::json data {{"message", "Test Response"}};
 
                                      session->sendResponse(data);
                                  });
