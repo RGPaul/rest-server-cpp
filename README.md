@@ -11,8 +11,7 @@ It is designed to exchange JSON data.
 auto restServer = std::make_shared<RestServer>("127.0.0.1", 8080);
 
 restServer->registerEndpoint("/", [](auto session, const auto& request) {
-    nlohmann::json data;
-    data["message"] = "Test Response";
+    nlohmann::json data {{ "message", "Test Response" }} ;
 
     session->sendResponse(data);
 });
@@ -75,6 +74,14 @@ Compile using CMake:
 cmake -S . -B build
 cmake --build build --config Release
 cmake --install build --config Release
+```
+
+
+## Compiling and running tests
+```
+cmake -S . -B build
+cmake --build build --config Release
+cmake --build build --config Release --target test
 ```
 
 ## License
