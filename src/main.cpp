@@ -83,8 +83,11 @@ int main(int argc, const char** argv)
                                  [](std::shared_ptr<Session> session, const http::request<http::string_body>& request) {
                                      BOOST_LOG_TRIVIAL(info) << "in callback for /test/$/detail";
 
+                                     std::string target = std::string(request.target());
+                                     std::vector<std::string> paths = RestServer::splitUri(target);
+
                                      nlohmann::json data;
-                                     data["message"] = "It worked for id";
+                                     data["message"] = "detail ressource for id: " + paths.at(2);
 
                                      session->sendResponse(data);
                                  });
