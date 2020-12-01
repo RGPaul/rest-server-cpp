@@ -209,6 +209,7 @@ if (BUILD_TESTS)
 
         # all tests are in the test folder
         set (TEST_SRC 
+            ${CMAKE_CURRENT_SOURCE_DIR}/test/RestServerTests.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/test/UriNodeTests.cpp
         )
 
