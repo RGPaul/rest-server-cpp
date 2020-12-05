@@ -44,4 +44,25 @@ BOOST_AUTO_TEST_CASE(constructor)
     BOOST_REQUIRE(restServer);
 }
 
+BOOST_AUTO_TEST_CASE(urlencode)
+{
+    std::string input1 = " @\\%";
+    std::string output1 = "%20%40%5C%25";
+    BOOST_CHECK_EQUAL(RestServer::urlEncode(input1), output1);
+
+    std::string input2 = "abcdegfhijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    BOOST_CHECK_EQUAL(RestServer::urlEncode(input2), input2);
+}
+
+BOOST_AUTO_TEST_CASE(urldecode)
+{
+    std::string input1 = "%20%40%5C%25";
+    std::string output1 = " @\\%";
+
+    BOOST_CHECK_EQUAL(RestServer::urlDecode(input1), output1);
+
+    std::string input2 = "abcdegfhijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    BOOST_CHECK_EQUAL(RestServer::urlDecode(input2), input2);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

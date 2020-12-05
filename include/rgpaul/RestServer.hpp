@@ -55,6 +55,9 @@ class RestServer : public std::enable_shared_from_this<RestServer>
 
     static std::vector<std::string> splitUri(std::string uri);
 
+    static std::string urlEncode(const std::string& url);
+    static std::string urlDecode(const std::string& url);
+
   private:
     // the io_context is required for all i/o
     boost::asio::io_context _ioc;

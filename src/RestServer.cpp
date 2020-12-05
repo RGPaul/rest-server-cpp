@@ -143,6 +143,118 @@ std::vector<std::string> RestServer::splitUri(std::string uri)
     return container;
 }
 
+std::string RestServer::urlEncode(const std::string& url)
+{
+    // only alphanum are safe characters
+    const char kSafe[256] = {/*      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
+                             /* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* 2 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* 3 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+
+                             /* 4 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                             /* 5 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+                             /* 6 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                             /* 7 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+
+                             /* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+                             /* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    const char kDec2hex[16 + 1] = "0123456789ABCDEF";
+    const unsigned char* source = reinterpret_cast<const unsigned char*>(url.c_str());
+    const int kSourceLength = url.length();
+    // we allocate a new char* that has space for tripple the amount of characters
+    unsigned char* const pStart = new unsigned char[kSourceLength * 3];
+    unsigned char* pEnd = pStart;
+    const unsigned char* const kSourceEnd = source + kSourceLength;
+
+    for (; source < kSourceEnd; ++source)
+    {
+        // check if this character is a safe one (that don't needs to be escaped)
+        if (kSafe[*source])
+            *pEnd++ = *source;
+        else
+        {
+            *pEnd++ = '%';
+            *pEnd++ = kDec2hex[*source >> 4];
+            *pEnd++ = kDec2hex[*source & 0x0F];
+        }
+    }
+
+    std::string result(reinterpret_cast<char*>(pStart), reinterpret_cast<char*>(pEnd));
+    delete[] pStart;
+    return result;
+}
+
+std::string RestServer::urlDecode(const std::string& url)
+{
+    // Note from RFC1630: "Sequences which start with a percent
+    // sign but are not followed by two hexadecimal characters
+    // (0-9, A-F) are reserved for future extension"
+
+    const char kHex2Dec[256] = {/*       0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */
+                                /* 0 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 1 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 2 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 3 */ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1,
+
+                                /* 4 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 5 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 6 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 7 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+
+                                /* 8 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* 9 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* A */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* B */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+
+                                /* C */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* D */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* E */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                /* F */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+    const unsigned char* source = reinterpret_cast<const unsigned char*>(url.c_str());
+    const int kSourceLength = url.length();
+    const unsigned char* const kSourceEnd = source + kSourceLength;
+
+    // last decodable '%' if there is one
+    const unsigned char* const kSourceLastDec = kSourceEnd - 2;
+
+    // we allocate a new char* for the decoded characters
+    char* const pStart = new char[kSourceLength];
+    char* pEnd = pStart;
+
+    while (source < kSourceLastDec)
+    {
+        if (*source == '%')
+        {
+            char dec1, dec2;
+            if (-1 != (dec1 = kHex2Dec[*(source + 1)]) && -1 != (dec2 = kHex2Dec[*(source + 2)]))
+            {
+                *pEnd++ = (dec1 << 4) + dec2;
+                source += 3;
+                continue;
+            }
+        }
+
+        *pEnd++ = *source++;
+    }
+
+    // the last 2 characters
+    while (source < kSourceEnd) *pEnd++ = *source++;
+
+    std::string result(pStart, pEnd);
+    delete[] pStart;
+    return result;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Private
 // ---------------------------------------------------------------------------------------------------------------------
