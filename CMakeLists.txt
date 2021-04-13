@@ -188,7 +188,7 @@ install (EXPORT RestServerTargets
 
 install ( FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/RestServerConfig.cmake"
-    "${CMAKE_BINARY_DIR}/RestServerConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/RestServerConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/RestServer
 )
 
