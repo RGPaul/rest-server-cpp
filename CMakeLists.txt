@@ -30,9 +30,6 @@ set (CMAKE_FIND_FRAMEWORK LAST)
 # set options
 option (BUILD_TESTS "enable building tests - requires boost test framework" ON)
 
-# add local cmake modules to module path
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
-
 # conan dependencies (try conan_paths first and then conanbuildinfo)
 if (EXISTS ${CMAKE_BINARY_DIR}/conan_paths.cmake)
     include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
@@ -68,10 +65,7 @@ endif()
 find_package (Boost 1.74.0 REQUIRED COMPONENTS filesystem log program_options random system)
 
 # nlohmann json - https://github.com/nlohmann/json
-if (DEFINED CONAN_NLOHMANN_JSON_ROOT)
-    set (NLOHMANN_JSON_ROOT ${CONAN_NLOHMANN_JSON_ROOT})
-endif()
-find_package (NlohmannJson REQUIRED)
+find_package (nlohmann_json REQUIRED)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # create library
@@ -104,8 +98,6 @@ target_link_libraries (RestServer
 
 # add inlcude folders of dependencies
 target_include_directories (RestServer
-    PRIVATE ${Boost_INCLUDE_DIRS}
-    PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
@@ -134,9 +126,7 @@ target_compile_definitions(sample PRIVATE "APP_VERSION=\"${PROJECT_VERSION}\"")
 
 ### link libraries ###
 
-target_include_directories(sample PRIVATE 
-    PRIVATE ${Boost_INCLUDE_DIRS}
-    PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
+target_include_directories(sample
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
@@ -230,10 +220,8 @@ if (BUILD_TESTS)
                 Boost::unit_test_framework
                 RestServer
             )
-
+            
             target_include_directories(${testname}
-                PRIVATE ${Boost_INCLUDE_DIRS}
-                PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR}
                 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
             )
 
