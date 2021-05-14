@@ -22,7 +22,7 @@ restServer->startListening();
 
 ## Compiling on Windows 10
 For compiling on Windows 10 you have to install [Visual Studio 2019](https://visualstudio.microsoft.com) and [CMake](https://cmake.org/).  
-You also have to install [Boost](https://www.boost.org/) 1.74.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
+You also have to install [Boost](https://www.boost.org/) 1.76.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
 Install the dependencies under `C:\include` and `C:\lib` or pass the `Boost_ROOT` and `NLOHMANN_JSON_ROOT` CMake options.  
 Alternatively you can use [Conan](https://conan.io/) to install all dependencies.  
 
@@ -41,7 +41,7 @@ cmake --install build --config Release
 
 ## Compiling on macOS
 For compiling on macOS you have to install [Xcode](https://developer.apple.com/xcode/) and [CMake](https://cmake.org/).  
-You also have to install [Boost](https://www.boost.org/) 1.74.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
+You also have to install [Boost](https://www.boost.org/) 1.76.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
 Install the dependencies under `/usr/local/include` and `/usr/local/lib` or pass the `Boost_ROOT` and `NLOHMANN_JSON_ROOT` CMake options.  
 Alternatively you can use [Conan](https://conan.io/) to install all dependencies.  
 
@@ -60,7 +60,7 @@ cmake --install build --config Release
 
 ## Compiling on Linux Debian
 For compiling on Linux you have to install `build-essential` and [CMake](https://cmake.org/).  
-You also have to install [Boost](https://www.boost.org/) 1.74.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
+You also have to install [Boost](https://www.boost.org/) 1.76.0 or later and [Nlohmann JSON](https://github.com/nlohmann/json).  
 Install the dependencies under `/usr/local/include` and `/usr/local/lib` or pass the `Boost_ROOT` and `NLOHMANN_JSON_ROOT` CMake options.  
 Alternatively you can use [Conan](https://conan.io/) to install all dependencies.  
 
